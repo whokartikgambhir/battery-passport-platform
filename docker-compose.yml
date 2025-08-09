@@ -1,0 +1,96 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports: ["27017:27017"]
+    volumes:
+      - mongo_data:/data/db
+
+  zookeeper:
+    image: bitnami/zookeeper:3.9
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports: ["2181:2181"]
+
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: kafka
+    depends_on: [zookeeper]
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+    ports: ["9092:9092"]
+
+  minio:
+    image: minio/minio:RELEASE.2024-06-13T22-53-53Z
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    ports: ["9000:9000", "9001:9001"]
+    volumes:
+      - minio_data:/data
+
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: auth-service
+    environment:
+      - PORT=5000
+      - MONGO_URI=mongodb://mongo:27017/authdb
+      - JWT_SECRET=supersecretkey
+      - INTERNAL_API_KEY=supersecretinternalkey
+    depends_on: [mongo]
+    ports: ["5000:5000"]
+
+  passport-service:
+    build:
+      context: ./passport-service
+    container_name: passport-service
+    environment:
+      - PORT=5001
+      - MONGO_URI=mongodb://mongo:27017/passportdb
+      - JWT_SECRET=supersecretkey
+      - KAFKA_BROKER=kafka:9092
+    depends_on: [mongo, kafka]
+    ports: ["5001:5001"]
+
+  document-service:
+    build:
+      context: ./document-service
+    container_name: document-service
+    environment:
+      - PORT=5002
+      - MONGO_URI=mongodb://mongo:27017/documentdb
+      - JWT_SECRET=supersecretkey
+      - S3_ENDPOINT=http://minio:9000
+      - S3_REGION=auto
+      - S3_BUCKET=battery-docs
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_FORCE_PATH_STYLE=true
+    depends_on: [mongo, minio]
+    ports: ["5002:5002"]
+
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: notification-service
+    environment:
+      - PORT=5003
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_GROUP_ID=notification-service
+      - TOPICS=passport.created,passport.updated,passport.deleted
+    depends_on: [kafka]
+    ports: ["5003:5003"]
+
+volumes:
+  mongo_data:
+  minio_data:
