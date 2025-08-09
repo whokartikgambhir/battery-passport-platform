@@ -11,7 +11,10 @@ import { config } from '../config.js';
 import { Document } from '../models/documentModel.js';
 
 // Multer: keep file in memory buffer for direct S3 upload
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 } // 25MB cap (tweak as needed)
+});
 export const uploadMiddleware = upload.single('file');
 
 // POST /api/documents/upload
