@@ -2,10 +2,12 @@ import express from 'express';
 import mongoose from 'mongoose';
 import { config } from './config.js';
 import passportRoutes from './routes/passportRoute.js';
+import internalRoute from "./routes/internalRoute.js";
 
 const app = express();
 app.use(express.json());
 
+app.use("/internal", internalRoute);
 app.use('/api/passports', passportRoutes);
 
 mongoose.connect(config.mongoUri, { dbName: 'passportdb' })
