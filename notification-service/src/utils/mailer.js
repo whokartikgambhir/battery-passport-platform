@@ -1,36 +1,39 @@
-import "dotenv/config";
 import nodemailer from "nodemailer";
+import { config } from "../config.js";
 
-const transporter = nodemailer.createTransport({
+const transport = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS
+    user: config.mailSmtpUser,
+    pass: config.mailSmtpPass
   }
 });
 
-export const sendEmail = async ({ to, type, passportId }) => {
-  let subject, html;
+// subject/body templates
+export function buildMessage({ type, passportId }) {
+  const verb =
+    type === "created" ? "Created" :
+    type === "updated" ? "Updated" :
+    type === "deleted" ? "Deleted" : "Event";
 
-  if (type === "created") {
-    subject = `✅ Passport Created: ${passportId}`;
-    html = `<p>A new passport <b>${passportId}</b> has been created successfully.</p>`;
-  }
+  const subject = `✅ Passport ${verb}: ${passportId}`;
+  const text =
+    type === "deleted"
+      ? `Passport ${passportId} has been deleted.`
+      : `A passport ${passportId} has been ${verb.toLowerCase()} successfully.`;
 
-  if (type === "updated") {
-    subject = `✏️ Passport Updated: ${passportId}`;
-    html = `<p>Passport <b>${passportId}</b> has been updated with new details.</p>`;
-  }
+  return { subject, text };
+}
 
-  if (type === "deleted") {
-    subject = `🗑️ Passport Deleted: ${passportId}`;
-    html = `<p>Passport <b>${passportId}</b> has been deleted from the system.</p>`;
-  }
+export async function sendEmail({ to, type, passportId }) {
+  const { subject, text } = buildMessage({ type, passportId });
 
-  await transporter.sendMail({
-    from: process.env.MAIL_FROM,
+  const from = `Battery Passport <${config.mailFromUser}>`;
+
+  return transport.sendMail({
+    from,
     to,
     subject,
-    html
+    text
   });
-};
+}
