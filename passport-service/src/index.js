@@ -2,17 +2,22 @@ import express from 'express';
 import mongoose from 'mongoose';
 import { config } from './config.js';
 import passportRoutes from './routes/passportRoute.js';
-import internalRoute from "./routes/internalRoute.js";
+import internalRoute from './routes/internalRoute.js';
 
 const app = express();
 app.use(express.json());
 
-app.use("/internal", internalRoute);
+// health checks
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+app.get('/ready', (_req, res) => res.json({ ready: true }));
+
+// mount routes
+app.use('/internal', internalRoute);
 app.use('/api/passports', passportRoutes);
 
 const connectWithRetry = () => {
   console.log('Attempting MongoDB connection for Passport Service...');
-  mongoose.connect(config.mongoUri, { 
+  mongoose.connect(config.mongoUri, {
     dbName: 'passportdb',
     useNewUrlParser: true,
     useUnifiedTopology: true

@@ -3,10 +3,10 @@ import { config } from './config.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Queue } from 'bullmq'; // ⬅️ NEW
+import { Queue } from 'bullmq';
 
 const emailQueue = new Queue('emailQueue', {
-  connection: { url: process.env.REDIS_URL || 'redis://localhost:6379' }
+  connection: { url: config.redisUrl }   // default redis://redis:6379
 });
 
 // Map Kafka topics to email job payload and enqueue
@@ -22,7 +22,7 @@ const handleKafkaEvent = async (topic, raw) => {
   if (!type) return;
 
   await emailQueue.add('send-email', {
-    to: process.env.MAIL_TO,       // or derive recipient from parsed payload if you prefer
+    to: config.mailTo,
     type,
     passportId: parsed.id,
     payload: parsed.data
@@ -41,7 +41,6 @@ export const startConsumer = async () => {
     console.log(`[Kafka] Subscribed to ${topic}`);
   }
 
-  // simple file logger as a "mock email"
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   const logFile = path.join(__dirname, '../notifications.log');
