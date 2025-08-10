@@ -1,5 +1,3 @@
-import { config } from '../config.js';
-
 const AUTH_BASE_URL = process.env.AUTH_BASE_URL || 'http://auth-service:5000/api/auth';
 const AUTH_INTROSPECT_URL = `${AUTH_BASE_URL}/introspect`;
 const AUTH_TIMEOUT_MS = Number(process.env.AUTH_TIMEOUT_MS || 1500);

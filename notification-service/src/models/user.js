@@ -1,4 +1,7 @@
+// external dependencies
 import mongoose from "mongoose";
+
+// internal dependencies
 import { config } from "../config.js";
 
 const authConn = mongoose.createConnection(config.authMongoUri, {

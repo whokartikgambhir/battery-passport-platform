@@ -1,4 +1,7 @@
+// external dependencies
 import lodashMerge from 'lodash.merge';
+
+// internal dependencies
 import { Passport } from '../models/passportModel.js';
 import { emitEvent } from '../kafka/producer.js';
 

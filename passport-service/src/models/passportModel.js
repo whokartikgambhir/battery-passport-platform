@@ -1,3 +1,4 @@
+// external dependencies
 import mongoose from 'mongoose';
 
 const passportSchema = new mongoose.Schema({

@@ -1,4 +1,7 @@
+// external dependencies
 import express from "express";
+
+// internal dependencies
 import * as Models from "../models/index.js";
 
 const router = express.Router();

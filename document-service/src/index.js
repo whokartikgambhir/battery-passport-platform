@@ -1,5 +1,8 @@
+// external dependencies
 import express from 'express';
 import mongoose from 'mongoose';
+
+// internal dependencies
 import { config } from './config.js';
 import routes from './routes/documentRoute.js';
 

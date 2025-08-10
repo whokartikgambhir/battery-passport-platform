@@ -1,4 +1,7 @@
+// external dependencies
 import express from 'express';
+
+// internal dependencies
 import { authenticate } from '../middlewares/authMiddleware.js';
 import { authorizeRole } from '../middlewares/roleMiddleware.js';
 import {
