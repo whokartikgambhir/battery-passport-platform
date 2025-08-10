@@ -5,16 +5,29 @@ import internalRoute from "./routes/internalRoute.js";
 import { config } from './config.js';
 
 const app = express();
-
 app.use(express.json());
 app.use("/internal", internalRoute);
 app.use('/api/auth', authRoutes);
 
 const PORT = config.port || 5000;
 
-mongoose.connect(config.mongoUri, { dbName: 'authdb' })
-  .then(() => {
-    console.log('MongoDB connected');
-    app.listen(PORT, () => console.log(`Auth Service running on port ${PORT}`));
+const connectWithRetry = () => {
+  console.log('Attempting MongoDB connection for Auth Service...');
+  mongoose.connect(config.mongoUri, { 
+    dbName: 'authdb',
+    useNewUrlParser: true,
+    useUnifiedTopology: true
   })
-  .catch(err => console.error('MongoDB error:', err));
+    .then(() => {
+      console.log('MongoDB connected');
+      app.listen(PORT, () => 
+        console.log(`Auth Service running on port ${PORT}`)
+      );
+    })
+    .catch((err) => {
+      console.error('Mongo connection failed, retrying in 5s...', err.message);
+      setTimeout(connectWithRetry, 5000);
+    });
+};
+
+connectWithRetry();

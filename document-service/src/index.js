@@ -7,9 +7,23 @@ const app = express();
 app.use(express.json());
 app.use('/api/documents', routes);
 
-mongoose.connect(config.mongoUri, { dbName: 'documentdb' })
-  .then(() => {
-    console.log('Document DB connected');
-    app.listen(config.port, () => console.log(`Document Service running on ${config.port}`));
+const connectWithRetry = () => {
+  console.log('Attempting MongoDB connection...');
+  mongoose.connect(config.mongoUri, { 
+    dbName: 'documentdb',
+    useNewUrlParser: true, 
+    useUnifiedTopology: true 
   })
-  .catch(err => console.error('Mongo error:', err));
+    .then(() => {
+      console.log('Document DB connected');
+      app.listen(config.port, () => 
+        console.log(`Document Service running on ${config.port}`)
+      );
+    })
+    .catch((err) => {
+      console.error('Mongo connection failed, retrying in 5s...', err.message);
+      setTimeout(connectWithRetry, 5000);
+    });
+};
+
+connectWithRetry();
