@@ -1,4 +1,7 @@
+// external dependencies
 import { Kafka } from 'kafkajs';
+
+// internal dependencies
 import { config } from '../config.js';
 
 let producer;

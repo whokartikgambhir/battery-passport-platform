@@ -1,4 +1,7 @@
+// external dependencies
 import express from 'express';
+
+// internal dependencies
 import { config } from './config.js';
 import { startConsumer } from './consumer.js';
 

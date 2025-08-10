@@ -1,4 +1,7 @@
+// external dependencies
 import bcrypt from 'bcrypt';
+
+// internal dependencies
 import { User } from '../models/userModel.js';
 import { generateToken } from '../utils/jwtUtil.js';
 

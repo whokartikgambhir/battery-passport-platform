@@ -1,4 +1,7 @@
+// external dependencies
 import nodemailer from "nodemailer";
+
+// internal dependencies
 import { config } from "../config.js";
 
 const transport = nodemailer.createTransport({

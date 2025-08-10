@@ -1,9 +1,12 @@
+// external dependencies
 import { Kafka } from 'kafkajs';
-import { config } from './config.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Queue } from 'bullmq';
+
+// internal dependencies
+import { config } from './config.js';
 
 const emailQueue = new Queue('emailQueue', {
   connection: { url: config.redisUrl }

@@ -1,3 +1,4 @@
+// internal dependencies
 import User from "../models/user.model.js";
 
 export async function getUserByIdInternal(req, res) {

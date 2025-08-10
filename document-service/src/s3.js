@@ -1,4 +1,7 @@
+// external dependencies
 import { S3Client } from '@aws-sdk/client-s3';
+
+// internal dependencies
 import { config } from './config.js';
 
 export const s3 = new S3Client({

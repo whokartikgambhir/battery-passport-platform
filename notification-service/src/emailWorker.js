@@ -1,10 +1,13 @@
+// external dependencies
+import "dotenv/config";
 import { Worker } from "bullmq";
 import mongoose from "mongoose";
+
+// internal dependencies
 import { config } from "./config.js";
 import { sendEmail } from "./utils/mailer.js";
-import EmailLog from "./models/emailLog.js";        // your existing log model
-import { AuthUser } from "./models/user.js";        // 🔴 NEW
-import "dotenv/config";
+import EmailLog from "./models/emailLog.js";
+import { AuthUser } from "./models/user.js";
 
 // connect local notification DB for logs
 mongoose.connect(config.mongoUri)
@@ -23,7 +26,7 @@ async function getRecipients(jobData) {
     return jobData.emails;
   }
 
-  // 🔸 Default: email all admins from Auth DB
+  // Default: email all admins from Auth DB
   const admins = await AuthUser.find({ role: "admin" }, { email: 1 }).lean();
   return admins.map(a => a.email);
 }

@@ -1,3 +1,6 @@
+// external dependencies
+import { pipeline } from 'stream';
+import { promisify } from 'util';
 import multer from 'multer';
 import {
   PutObjectCommand,
@@ -7,11 +10,11 @@ import {
   S3Client
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+// internal dependencies
 import { s3 } from '../s3.js';
 import { config } from '../config.js';
 import { Document } from '../models/documentModel.js';
-import { pipeline } from 'stream';
-import { promisify } from 'util';
 
 const pump = promisify(pipeline);
 

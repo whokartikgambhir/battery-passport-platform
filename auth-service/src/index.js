@@ -1,5 +1,8 @@
+// external dependencies
 import express from 'express';
 import mongoose from 'mongoose';
+
+// internal dependencies
 import authRoutes from './routes/authRoutes.js';
 import internalRoute from "./routes/internalRoute.js";
 import { config } from './config.js';

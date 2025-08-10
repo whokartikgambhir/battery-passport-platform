@@ -1,3 +1,4 @@
+// internal dependencies
 import { config } from '../config.js';
 
 const AUTH_INTROSPECT_URL = `${config.authBaseUrl}/introspect`;
