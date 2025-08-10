@@ -1,14 +1,15 @@
 import { Worker } from "bullmq";
-import { sendEmail } from "./utils/mailer.js";
 import mongoose from "mongoose";
-import EmailLog from "./models/emailLog.js";
 import "dotenv/config";
+import { config } from "./config.js";
+import { sendEmail } from "./utils/mailer.js";
+import EmailLog from "./models/emailLog.js";
 
-mongoose.connect(process.env.MONGO_URI || "mongodb://mongo:27017/notificationdb")
+mongoose.connect(config.mongoUri)
   .then(() => console.log("Notification DB connected"))
   .catch(err => console.error("DB connection error:", err));
 
-export const emailWorker = new Worker(
+const worker = new Worker(
   "emailQueue",
   async job => {
     const { to, type, passportId } = job.data;
@@ -35,8 +36,15 @@ export const emailWorker = new Worker(
     }
   },
   {
-    connection: { url: process.env.REDIS_URL || "redis://localhost:6379" },
+    connection: { url: config.redisUrl },
     attempts: 3,
     backoff: { type: "exponential", delay: 5000 }
   }
+);
+
+worker.on("failed", (job, err) =>
+  console.error("[email-worker] job failed", job?.id, err)
+);
+worker.on("completed", job =>
+  console.log("[email-worker] job completed", job.id)
 );

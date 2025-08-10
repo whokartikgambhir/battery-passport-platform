@@ -2,7 +2,18 @@ import lodashMerge from 'lodash.merge';
 import { Passport } from '../models/passportModel.js';
 import { emitEvent } from '../kafka/producer.js';
 
-// POST /api/passports
+// GET /api/passports  (admin/user)
+export const listPassports = async (_req, res) => {
+  try {
+    const docs = await Passport.find({}).lean();
+    return res.status(200).json(docs);
+  } catch (err) {
+    console.error('List Passports Error:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /api/passports  (admin)
 export const createPassport = async (req, res) => {
   try {
     const passport = await Passport.create(req.body);
@@ -27,7 +38,7 @@ export const getPassportById = async (req, res) => {
   }
 };
 
-// PUT /api/passports/:id  (admin only)
+// PUT /api/passports/:id  (admin)
 export const updatePassport = async (req, res) => {
   try {
     const { id } = req.params;
@@ -46,7 +57,7 @@ export const updatePassport = async (req, res) => {
   }
 };
 
-// DELETE /api/passports/:id  (admin only)
+// DELETE /api/passports/:id  (admin)
 export const deletePassport = async (req, res) => {
   try {
     const { id } = req.params;

@@ -4,6 +4,7 @@ dotenv.config();
 export const config = {
   port: process.env.PORT || 5001,
   mongoUri: process.env.MONGO_URI,
-  jwtSecret: process.env.JWT_SECRET,
-  kafkaBroker: process.env.KAFKA_BROKER || 'localhost:9092'
+  kafkaBroker: process.env.KAFKA_BROKER || 'kafka:9092',
+  authBaseUrl: process.env.AUTH_BASE_URL || 'http://auth-service:5000/api/auth',
+  authTimeoutMs: Number(process.env.AUTH_TIMEOUT_MS || 1500)
 };

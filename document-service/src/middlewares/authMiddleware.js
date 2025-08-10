@@ -1,17 +1,40 @@
-import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 
-export const authenticate = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: 'Missing token' });
+const AUTH_BASE_URL = process.env.AUTH_BASE_URL || 'http://auth-service:5000/api/auth';
+const AUTH_INTROSPECT_URL = `${AUTH_BASE_URL}/introspect`;
+const AUTH_TIMEOUT_MS = Number(process.env.AUTH_TIMEOUT_MS || 1500);
 
-  const token = authHeader.split(' ')[1];
-
+export const authenticate = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, config.jwtSecret);
-    req.user = decoded;
-    next();
+    const authHeader = req.headers.authorization || '';
+    if (!authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Missing token' });
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
+
+    const resp = await fetch(AUTH_INTROSPECT_URL, {
+      method: 'POST',
+      headers: { Authorization: authHeader },
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+
+    if (!resp.ok) {
+      let body = null;
+      try { body = await resp.json(); } catch {}
+      return res.status(401).json({ message: body?.error || 'Unauthorized' });
+    }
+
+    const data = await resp.json();
+    if (!data.valid || !data.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    req.user = data.user;
+    return next();
   } catch {
-    return res.status(403).json({ message: 'Invalid token' });
+    return res.status(401).json({ message: 'Unauthorized' });
   }
 };

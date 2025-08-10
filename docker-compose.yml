@@ -27,7 +27,6 @@ services:
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
     ports: ["9092:9092"]
 
-  # Redis for BullMQ
   redis:
     image: redis:7
     container_name: redis
@@ -48,11 +47,12 @@ services:
     build:
       context: ./auth-service
     container_name: auth-service
+    env_file:
+      - ./auth-service/.env
     environment:
       - PORT=5000
       - MONGO_URI=mongodb://mongo:27017/authdb
-      - JWT_SECRET=supersecretkey
-      - INTERNAL_API_KEY=4if3jwkd39er9i94
+      # JWT_SECRET comes from env file
     depends_on: [mongo]
     ports: ["5000:5000"]
 
@@ -60,64 +60,65 @@ services:
     build:
       context: ./passport-service
     container_name: passport-service
+    env_file:
+      - ./passport-service/.env
     environment:
       - PORT=5001
       - MONGO_URI=mongodb://mongo:27017/passportdb
-      - JWT_SECRET=supersecretkey
       - KAFKA_BROKER=kafka:9092
-    depends_on: [mongo, kafka]
+      - AUTH_BASE_URL=http://auth-service:5000/api/auth
+      - AUTH_TIMEOUT_MS=1500
+    depends_on: [mongo, kafka, auth-service]
     ports: ["5001:5001"]
 
   document-service:
     build:
       context: ./document-service
     container_name: document-service
+    env_file:
+      - ./document-service/.env
     environment:
       - PORT=5002
       - MONGO_URI=mongodb://mongo:27017/documentdb
-      - JWT_SECRET=supersecretkey
       - S3_ENDPOINT=http://minio:9000
       - S3_REGION=auto
       - S3_BUCKET=battery-docs
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
       - S3_FORCE_PATH_STYLE=true
       - PUBLIC_S3_HOST=http://localhost:9000
-    depends_on: [mongo, minio]
+      - AUTH_BASE_URL=http://auth-service:5000/api/auth
+      - AUTH_TIMEOUT_MS=1500
+      # S3_ACCESS_KEY / S3_SECRET_KEY come from env file
+    depends_on: [mongo, minio, auth-service]
     ports: ["5002:5002"]
 
   notification-service:
     build:
       context: ./notification-service
     container_name: notification-service
+    env_file:
+      - ./notification-service/.env
     environment:
       - PORT=5003
       - KAFKA_BROKER=kafka:9092
       - KAFKA_GROUP_ID=notification-service
       - TOPICS=passport.created,passport.updated,passport.deleted
       - REDIS_URL=redis://redis:6379
-      # Optional: if you also want this process to send emails directly (not recommended now that we have a worker)
-      - MAIL_TO=you@example.com
-      - MAIL_FROM=Battery Passport <gambhirkartik5@gmail.com>
-      - MAIL_USER=gambhirkartik5@gmail.com
-      - MAIL_PASS=rkzf lpui fxqr fszs
       - MONGO_URI=mongodb://mongo:27017/notificationdb
+      # MAIL_* come from env file
     depends_on: [kafka, redis, mongo]
     ports: ["5003:5003"]
 
-  # Dedicated BullMQ worker that processes email jobs and sends real emails
   email-worker:
     build:
       context: ./notification-service
     container_name: email-worker
     command: ["node", "src/emailWorker.js"]
+    env_file:
+      - ./notification-service/.env
     environment:
       - REDIS_URL=redis://redis:6379
       - MONGO_URI=mongodb://mongo:27017/notificationdb
-      - MAIL_TO=you@example.com
-      - MAIL_FROM=Battery Passport <gambhirkartik5@gmail.com>
-      - MAIL_USER=gambhirkartik5@gmail.com
-      - MAIL_PASS=rkzf lpui fxqr fszs
+      # MAIL_* come from env file
     depends_on: [redis, mongo]
 
 volumes:

@@ -34,3 +34,35 @@ export const login = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const introspect = async (req, res) => {
+  try {
+    const auth = req.headers.authorization || "";
+    const [, token] = auth.split(" ");
+    if (!token) {
+      return res.status(401).json({ valid: false, error: "Missing token" });
+    }
+
+    const jwt = (await import('jsonwebtoken')).default;
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+    // fetch fresh user to reflect latest role/status
+    const user = await User.findById(payload.id).lean();
+    if (!user) {
+      return res.status(401).json({ valid: false, error: "User not found" });
+    }
+
+    return res.json({
+      valid: true,
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        role: user.role,
+      },
+      exp: payload.exp,
+      iat: payload.iat,
+    });
+  } catch (err) {
+    return res.status(401).json({ valid: false, error: err.message });
+  }
+};
