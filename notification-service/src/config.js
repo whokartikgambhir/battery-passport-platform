@@ -11,8 +11,8 @@ export const config = {
     .filter(Boolean),
   redisUrl: process.env.REDIS_URL || "redis://redis:6379",
   mongoUri: process.env.MONGO_URI || "mongodb://mongo:27017/notificationdb",
-  mailTo: process.env.MAIL_TO,
-  mailFrom: process.env.MAIL_FROM || process.env.MAIL_USER,
-  mailUser: process.env.MAIL_USER,
-  mailPass: process.env.MAIL_PASS
+  authMongoUri: process.env.AUTH_MONGO_URI || "mongodb://mongo:27017/authdb",
+  mailFromUser: "gambhirkartik5@gmail.com",     // FROM address (and SMTP user)
+  mailSmtpUser: "gambhirkartik5@gmail.com",     // SMTP auth user
+  mailSmtpPass: process.env.MAIL_PASS || "",    // << set in .env
 };

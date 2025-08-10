@@ -6,26 +6,27 @@ import { fileURLToPath } from 'url';
 import { Queue } from 'bullmq';
 
 const emailQueue = new Queue('emailQueue', {
-  connection: { url: config.redisUrl }   // default redis://redis:6379
+  connection: { url: config.redisUrl }
 });
 
-// Map Kafka topics to email job payload and enqueue
 const handleKafkaEvent = async (topic, raw) => {
   let parsed = {};
-  try { parsed = JSON.parse(raw); } catch { /* ignore parse errors */ }
+  try { parsed = JSON.parse(raw); } catch {}
 
   let type = null;
   if (topic === 'passport.created') type = 'created';
   if (topic === 'passport.updated') type = 'updated';
   if (topic === 'passport.deleted') type = 'deleted';
-
   if (!type) return;
 
+  // enqueue job — recipients will be resolved in the worker (admins by default)
   await emailQueue.add('send-email', {
-    to: config.mailTo,
     type,
     passportId: parsed.id,
-    payload: parsed.data
+    payload: parsed.data,
+    // Optional: include specific target users if you want
+    // userIds: parsed.userIds,  // e.g., producer can send owners
+    // emails: parsed.emails
   });
 
   console.log(`[Producer] Enqueued ${type} email for passport ${parsed.id}`);

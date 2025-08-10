@@ -104,7 +104,8 @@ services:
       - TOPICS=passport.created,passport.updated,passport.deleted
       - REDIS_URL=redis://redis:6379
       - MONGO_URI=mongodb://mongo:27017/notificationdb
-      # MAIL_* come from env file
+      - AUTH_MONGO_URI=mongodb://mongo:27017/authdb   # <-- fetch recipients from Auth DB
+      # MAIL_PASS should be in ./notification-service/.env (Gmail App Password)
     depends_on: [kafka, redis, mongo]
     ports: ["5003:5003"]
 
@@ -118,7 +119,8 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379
       - MONGO_URI=mongodb://mongo:27017/notificationdb
-      # MAIL_* come from env file
+      - AUTH_MONGO_URI=mongodb://mongo:27017/authdb   # <-- worker reads users from Auth DB
+      # MAIL_PASS should be in ./notification-service/.env (Gmail App Password)
     depends_on: [redis, mongo]
 
 volumes:
