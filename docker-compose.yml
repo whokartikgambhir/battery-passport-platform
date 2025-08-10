@@ -27,6 +27,12 @@ services:
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
     ports: ["9092:9092"]
 
+  # Redis for BullMQ
+  redis:
+    image: redis:7
+    container_name: redis
+    ports: ["6379:6379"]
+
   minio:
     image: minio/minio:RELEASE.2024-06-13T22-53-53Z
     container_name: minio
@@ -89,8 +95,30 @@ services:
       - KAFKA_BROKER=kafka:9092
       - KAFKA_GROUP_ID=notification-service
       - TOPICS=passport.created,passport.updated,passport.deleted
-    depends_on: [kafka]
+      - REDIS_URL=redis://redis:6379
+      # Optional: if you also want this process to send emails directly (not recommended now that we have a worker)
+      - MAIL_TO=you@example.com
+      - MAIL_FROM=Battery Passport <gambhirkartik5@gmail.com>
+      - MAIL_USER=gambhirkartik5@gmail.com
+      - MAIL_PASS=rkzf lpui fxqr fszs
+      - MONGO_URI=mongodb://mongo:27017/notificationdb
+    depends_on: [kafka, redis, mongo]
     ports: ["5003:5003"]
+
+  # Dedicated BullMQ worker that processes email jobs and sends real emails
+  email-worker:
+    build:
+      context: ./notification-service
+    container_name: email-worker
+    command: ["node", "src/emailWorker.js"]
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - MONGO_URI=mongodb://mongo:27017/notificationdb
+      - MAIL_TO=you@example.com
+      - MAIL_FROM=Battery Passport <gambhirkartik5@gmail.com>
+      - MAIL_USER=gambhirkartik5@gmail.com
+      - MAIL_PASS=rkzf lpui fxqr fszs
+    depends_on: [redis, mongo]
 
 volumes:
   mongo_data:
