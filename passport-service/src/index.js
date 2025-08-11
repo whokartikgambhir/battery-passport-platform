@@ -11,6 +11,7 @@ import passportRoutes from "./routes/passportRoute.js";
 import internalRoute from "./routes/internalRoute.js";
 import { logger } from "./logger.js";
 import { requestId, httpLogger } from "./middlewares/requestLogging.js";
+import { mountSwagger } from "./swagger.js";
 
 const app = express();
 
@@ -31,6 +32,9 @@ app.use(
     credentials: false,
   })
 );
+
+// Swagger (before limiters)
+mountSwagger(app, "Battery Passport Service");
 
 // global rate limiter (protect read/list operations)
 const globalLimiter = rateLimit({
