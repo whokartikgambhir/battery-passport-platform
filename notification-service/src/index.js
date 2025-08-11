@@ -1,17 +1,30 @@
 // external dependencies
 import express from "express";
+import helmet from "helmet";
+import cors from "cors";
 
 // internal dependencies
 import { config } from "./config.js";
 import { startConsumer } from "./consumer.js";
 import { requestId, httpLogger } from "./middlewares/requestLogging.js";
 import { logger } from "./logger.js";
+import { mountSwagger } from "./swagger.js";
 
 const app = express();
+
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+
+// basic hardening + CORS for consistency
+app.use(helmet());
+app.use(cors({ origin: (process.env.CORS_ORIGIN || "*").split(",").map(s => s.trim()) }));
 
 // HTTP logging + request IDs
 app.use(requestId);
 app.use(httpLogger);
+
+// Swagger
+mountSwagger(app, "Notification Service");
 
 // health/ready
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
