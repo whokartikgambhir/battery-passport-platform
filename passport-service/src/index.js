@@ -1,40 +1,46 @@
 // external dependencies
-import express from 'express';
-import mongoose from 'mongoose';
+import express from "express";
+import mongoose from "mongoose";
 
 // internal dependencies
-import { config } from './config.js';
-import passportRoutes from './routes/passportRoute.js';
-import internalRoute from './routes/internalRoute.js';
+import { config } from "./config.js";
+import passportRoutes from "./routes/passportRoute.js";
+import internalRoute from "./routes/internalRoute.js";
+import { logger } from "./logger.js";
+import { requestId, httpLogger } from "./middlewares/requestLogging.js";
 
 const app = express();
+
 app.use(express.json());
+app.use(requestId);
+app.use(httpLogger);
 
-// health checks
-app.get('/health', (_req, res) => res.json({ status: 'ok' }));
-app.get('/ready', (_req, res) => res.json({ ready: true }));
+// health/ready (uniform)
+app.get("/health", (_req, res) => res.json({ status: "ok" }));
+let ready = false;
+app.get("/ready", (_req, res) => res.status(ready ? 200 : 503).json({ ready }));
 
-// mount routes
-app.use('/internal', internalRoute);
-app.use('/api/passports', passportRoutes);
+// routes
+app.use("/internal", internalRoute);
+app.use("/api/passports", passportRoutes);
 
-const connectWithRetry = () => {
-  console.log('Attempting MongoDB connection for Passport Service...');
-  mongoose.connect(config.mongoUri, {
-    dbName: 'passportdb',
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
-    .then(() => {
-      console.log('Passport DB connected');
-      app.listen(config.port, () => {
-        console.log(`Passport Service running on port ${config.port}`);
-      });
-    })
-    .catch((err) => {
-      console.error('DB connection failed, retrying in 5s...', err.message);
-      setTimeout(connectWithRetry, 5000);
-    });
+const connectWithRetry = async () => {
+  try {
+    logger.info("Attempting MongoDB connection for Passport Service...");
+    await mongoose.connect(config.mongoUri, { dbName: "passportdb" }); // v6+ no need for extra opts
+    logger.info("Passport DB connected");
+    app.listen(config.port, () => logger.info(`Passport Service running on port ${config.port}`));
+    ready = true;
+  } catch (err) {
+    logger.error("DB connection failed, retrying in 5s...", { error: err.message });
+    setTimeout(connectWithRetry, 5000);
+  }
 };
 
 connectWithRetry();
+
+// centralized error handler
+app.use((err, _req, res, _next) => {
+  logger.error(err);
+  res.status(err.status || 500).json({ error: err.message || "Internal Server Error" });
+});

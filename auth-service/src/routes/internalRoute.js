@@ -3,14 +3,17 @@ import express from "express";
 
 // internal dependencies
 import * as Models from "../models/index.js";
+import { config } from "../config.js";
+import { component } from "../logger.js";
 
 const router = express.Router();
+const log = component("internal");
 
 router.post("/dbsync", async (req, res) => {
   const { modelName, methodName, args = [] } = req.body;
 
   const apiKey = req.headers["x-internal-key"];
-  if (apiKey !== process.env.INTERNAL_API_KEY) {
+  if (!apiKey || apiKey !== config.internalApiKey) {
     return res.status(403).json({ error: "Unauthorized access" });
   }
 
@@ -29,10 +32,10 @@ router.post("/dbsync", async (req, res) => {
     }
 
     const result = await model[methodName](...args);
-    res.status(200).json({ result });
+    return res.status(200).json({ result });
   } catch (err) {
-    console.error("DBSYNC ERROR:", err);
-    res.status(500).json({ error: err.message });
+    log.error(err, { route: "dbsync", modelName, methodName });
+    return res.status(500).json({ error: err.message });
   }
 });
 

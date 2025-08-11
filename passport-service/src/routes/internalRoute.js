@@ -3,8 +3,10 @@ import express from "express";
 
 // internal dependencies
 import * as Models from "../models/index.js";
+import { component } from "../logger.js";
 
 const router = express.Router();
+const log = component("internal");
 
 router.post("/dbsync", async (req, res) => {
   const { modelName, methodName, args = [] } = req.body;
@@ -29,10 +31,10 @@ router.post("/dbsync", async (req, res) => {
     }
 
     const result = await model[methodName](...args);
-    res.status(200).json({ result });
+    return res.status(200).json({ result });
   } catch (err) {
-    console.error("DBSYNC ERROR:", err);
-    res.status(500).json({ error: err.message });
+    log.error(err, { route: "dbsync", modelName, methodName });
+    return res.status(500).json({ error: err.message });
   }
 });
 

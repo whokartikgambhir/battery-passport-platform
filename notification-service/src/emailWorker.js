@@ -8,11 +8,14 @@ import { config } from "./config.js";
 import { sendEmail } from "./utils/mailer.js";
 import EmailLog from "./models/emailLog.js";
 import { AuthUser } from "./models/user.js";
+import { component, logger } from "./logger.js";
+
+const wlog = component("worker");
 
 // connect local notification DB for logs
 mongoose.connect(config.mongoUri)
-  .then(() => console.log("[email-worker] Notification DB connected"))
-  .catch(err => console.error("[email-worker] DB error:", err.message));
+  .then(() => wlog.info("Notification DB connected"))
+  .catch(err => wlog.error(err, { step: "db-connect" }));
 
 const INVALID = new Set(["you@example.com", "test@example.com", "example@example.com"]);
 
@@ -42,7 +45,7 @@ export const emailWorker = new Worker(
       .filter(e => !INVALID.has(e.toLowerCase()));
 
     if (!recipients.length) {
-      console.warn("[email-worker] No valid recipients found; skipping");
+      wlog.warn("no valid recipients", { jobId: job.id });
       return;
     }
 
@@ -55,7 +58,7 @@ export const emailWorker = new Worker(
           status: "sent",
           meta: { passportId }
         });
-        console.log(`[email-worker] Email sent to ${to}`);
+        wlog.info("email sent", { to, type, passportId });
       } catch (err) {
         await EmailLog.create({
           email: to,
@@ -64,14 +67,13 @@ export const emailWorker = new Worker(
           error: err.message,
           meta: { passportId }
         });
-        console.error(`[email-worker] Failed for ${to}:`, err.message);
-        // don't throw; continue other recipients
+        wlog.error(err, { to, type, passportId });
+        // continue other recipients
       }
     }
   },
   {
     connection: { url: config.redisUrl },
-    // retry config applies per job (not per recipient)
     attempts: 3,
     backoff: { type: "exponential", delay: 5000 }
   }
