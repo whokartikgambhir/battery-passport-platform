@@ -1,307 +1,271 @@
-# 🔋 Battery Passport Platform — MEAtec Backend Assignment
+# 🔋 Battery Passport Platform – MEAtec Backend Assignment
 
-A microservices-based backend system for **digital battery passports** built with **Node.js, Express, MongoDB, Kafka, and MinIO (S3-compatible)**, containerized with **Docker Compose**.
-
----
-
-## 1) Service Descriptions
-
-### Auth Service
-- **Purpose:** User registration/login, JWT auth, role-based access.
-- **Ports:** `5000`
-- **DB:** `authdb` (MongoDB)
-- **Notes:** Other services call this to validate/authorize requests.
-
-### Battery Passport Service
-- **Purpose:** CRUD for battery passports.
-- **Ports:** `5001`
-- **DB:** `passportdb` (MongoDB)
-- **Events:** Emits **`passport.created`**, **`passport.updated`**, **`passport.deleted`** to Kafka.
-
-### Document Service
-- **Purpose:** File upload/download + metadata.
-- **Ports:** `5002`
-- **DB:** `documentdb` (MongoDB)
-- **Storage:** MinIO (S3-compatible). Returns presigned URLs or streams files.
-
-### Notification Service
-- **Purpose:** Kafka consumer for passport events, sends emails (via SMTP) or logs them.
-- **Ports:** `5003`
-- **DB:** —
-- **Notes:** No public CRUD; has `/health` and consumes Kafka topics.
+A microservices-based backend system for managing **digital battery passports** built with **Node.js, Express.js, MongoDB, Kafka, MinIO-compatible storage**, and **Docker**.
 
 ---
 
-## 2) API Usage (Quick Tests with `curl`)
+## 📜 Overview
 
-> Replace `<JWT>` with the token from login. Replace `DOC_ID` / `PASS_ID` after creation.
+This platform manages:
+- User authentication & role-based access
+- Battery passport lifecycle (create, update, retrieve, delete)
+- Document storage in MinIO
+- Event-driven notifications via Kafka
 
-### Auth
-```bash
-# Register
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"Pass@123","role":"admin"}'
-
-# Login (copy the "token" from the response)
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"Pass@123"}'
-````
-
-### Battery Passports
-
-```bash
-# Create (Admin)
-curl -X POST http://localhost:5001/api/passports \
-  -H "Authorization: Bearer <JWT>" -H "Content-Type: application/json" \
-  -d '{
-        "data": {
-          "generalInformation": {
-            "batteryIdentifier": "BP-2024-011",
-            "batteryModel": {"id":"LM3-BAT-2024","modelName":"GMC WZX1"},
-            "batteryMass": 450, "batteryCategory": "EV", "batteryStatus": "Original",
-            "manufacturingDate": "2024-01-15", "manufacturingPlace": "Gigafactory Nevada",
-            "warrantyPeriod": "8",
-            "manufacturerInformation": {"manufacturerName":"Tesla Inc","manufacturerIdentifier":"TESLA-001"}
-          },
-          "materialComposition": {
-            "batteryChemistry": "LiFePO4",
-            "criticalRawMaterials": ["Lithium","Iron"],
-            "hazardousSubstances": [{
-              "substanceName":"Lithium Hexafluorophosphate","chemicalFormula":"LiPF6","casNumber":"21324-40-3"
-            }]
-          },
-          "carbonFootprint": {
-            "totalCarbonFootprint": 850, "measurementUnit":"kg CO2e", "methodology":"Life Cycle Assessment (LCA)"
-          }
-        }
-      }'
-
-# List (Admin/User)
-curl -H "Authorization: Bearer <JWT>" http://localhost:5001/api/passports
-
-# Get by ID
-curl -H "Authorization: Bearer <JWT>" http://localhost:5001/api/passports/PASS_ID
-
-# Update (Admin)
-curl -X PUT http://localhost:5001/api/passports/PASS_ID \
-  -H "Authorization: Bearer <JWT>" -H "Content-Type: application/json" \
-  -d '{"data":{"generalInformation":{"warrantyPeriod":"10"}}}'
-
-# Delete (Admin)
-curl -X DELETE -H "Authorization: Bearer <JWT>" http://localhost:5001/api/passports/PASS_ID
-```
-
-### Documents (MinIO-backed)
-
-```bash
-# Upload (multipart/form-data)
-curl -X POST http://localhost:5002/api/documents/upload \
-  -H "Authorization: Bearer <JWT>" \
-  -F "file=@/absolute/path/to/file.pdf"
-
-# Get presigned URL
-curl -H "Authorization: Bearer <JWT>" http://localhost:5002/api/documents/DOC_ID
-
-# Stream download via service
-curl -L -H "Authorization: Bearer <JWT>" http://localhost:5002/api/documents/DOC_ID/download --output file.pdf
-
-# Update metadata (Admin)
-curl -X PUT http://localhost:5002/api/documents/DOC_ID \
-  -H "Authorization: Bearer <JWT>" -H "Content-Type: application/json" \
-  -d '{"fileName":"renamed.pdf"}'
-
-# Delete (Admin)
-curl -X DELETE -H "Authorization: Bearer <JWT>" http://localhost:5002/api/documents/DOC_ID
-```
+The architecture follows **service isolation** principles with **HTTP** and **Kafka** communication.
 
 ---
 
-## 3) Setup Instructions (Docker + .env)
+## 🏗 Microservices
+
+### 1. **Auth Service**
+- **Responsibilities:**
+  - User registration/login
+  - JWT-based authentication
+  - Role-based access control
+- **Endpoints:**
+  - `POST /api/auth/register`
+  - `POST /api/auth/login`
+  - `POST /api/auth/introspect`
+- **Database:** `authdb`
+
+### 2. **Battery Passport Service**
+- **Responsibilities:**
+  - Create, read, update, delete passports
+  - Emits Kafka events: `passport.created`, `passport.updated`, `passport.deleted`
+- **Endpoints:**
+  - `GET /api/passports` (admin/user)
+  - `POST /api/passports` (admin)
+  - `GET /api/passports/:id`
+  - `PUT /api/passports/:id` (admin)
+  - `DELETE /api/passports/:id` (admin)
+- **Database:** `passportdb`
+
+### 3. **Document Service**
+- **Responsibilities:**
+  - Upload documents to MinIO
+  - Manage metadata in MongoDB
+- **Endpoints:**
+  - `POST /api/documents/upload`
+  - `GET /api/documents/:docId`
+  - `GET /api/documents/:docId/download`
+  - `PUT /api/documents/:docId`
+  - `DELETE /api/documents/:docId`
+- **Database:** `documentdb`
+
+### 4. **Notification Service**
+- **Responsibilities:**
+  - Kafka consumer for passport events
+  - Sends email or logs messages
+
+---
+
+## 🔌 Communication
+- **HTTP** – Auth & role validation between services
+- **Kafka** – Asynchronous event communication
+- **MinIO** – File storage
+
+---
+
+## ⚙️ Tech Stack
+- **Backend:** Node.js, Express.js
+- **Database:** MongoDB
+- **Messaging:** Apache Kafka
+- **Storage:** MinIO
+- **Auth:** JWT, bcrypt
+- **Containerization:** Docker, Docker Compose
+- **Logging:** Custom logger with request tracing
+
+---
+
+## 🚀 Local Setup
 
 ### Prerequisites
+- Docker & Docker Compose
+- Node.js (v18+)
 
-* **Docker** & **Docker Compose**
-* **Node.js 18+** (for local dev without Docker)
-
-### `.env` examples (create in each service folder)
-
-**Common values used across services**
-
-```
-MONGO_URI=mongodb://mongo:27017
-JWT_SECRET=supersecretkey
-INTERNAL_API_KEY=internalkey123
-```
-
-**Auth Service (`services/auth/.env`)**
-
-```
-PORT=5000
-MONGO_URI=mongodb://mongo:27017
-DB_NAME=authdb
-JWT_SECRET=supersecretkey
-INTERNAL_API_KEY=internalkey123
-```
-
-**Passport Service (`services/passport/.env`)**
-
-```
-PORT=5001
-MONGO_URI=mongodb://mongo:27017
-DB_NAME=passportdb
-JWT_SECRET=supersecretkey
-AUTH_BASE_URL=http://auth:5000
-KAFKA_BROKERS=kafka:9092
-INTERNAL_API_KEY=internalkey123
-```
-
-**Document Service (`services/document/.env`)**
-
-```
-PORT=5002
-MONGO_URI=mongodb://mongo:27017
-DB_NAME=documentdb
-JWT_SECRET=supersecretkey
-AUTH_BASE_URL=http://auth:5000
-S3_ENDPOINT=http://minio:9000
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin123
-S3_BUCKET=bp-docs
-INTERNAL_API_KEY=internalkey123
-```
-
-**Notification Service (`services/notification/.env`)**
-
-```
-PORT=5003
-KAFKA_BROKERS=kafka:9092
-# Optional SMTP (if omitted, service logs events instead of emailing)
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASS=
-SMTP_FROM=Battery Passport <no-reply@example.com>
-```
-
-### `docker-compose.yml` (root)
-
-> If you don’t already have one, here’s a minimal example:
-
-```yaml
-version: "3.9"
-services:
-  mongo:
-    image: mongo:6
-    ports: ["27017:27017"]
-    volumes: [mongo:/data/db]
-
-  zookeeper:
-    image: bitnami/zookeeper:3.9
-    environment: [ALLOW_ANONYMOUS_LOGIN=yes]
-    ports: ["2181:2181"]
-
-  kafka:
-    image: bitnami/kafka:3.6
-    depends_on: [zookeeper]
-    ports: ["9092:9092"]
-    environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      - ALLOW_PLAINTEXT_LISTENER=yes
-
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin123
-    ports: ["9000:9000","9001:9001"]
-    volumes: [minio:/data]
-
-  auth:
-    build: ./services/auth
-    env_file: [./services/auth/.env]
-    depends_on: [mongo]
-    ports: ["5000:5000"]
-
-  passport:
-    build: ./services/passport
-    env_file: [./services/passport/.env]
-    depends_on: [auth, mongo, kafka]
-    ports: ["5001:5001"]
-
-  document:
-    build: ./services/document
-    env_file: [./services/document/.env]
-    depends_on: [auth, mongo, minio]
-    ports: ["5002:5002"]
-
-  notification:
-    build: ./services/notification
-    env_file: [./services/notification/.env]
-    depends_on: [kafka]
-    ports: ["5003:5003"]
-
-volumes:
-  mongo: {}
-  minio: {}
-```
-
-### Run locally
-
-```bash
-docker compose up --build
-```
-
-**Local URLs**
-
-* Auth → `http://localhost:5000`
-* Passports → `http://localhost:5001`
-* Documents → `http://localhost:5002`
-* Notification → `http://localhost:5003`
+### Steps
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/battery-passport-platform.git
+   cd battery-passport-platform
+   ```
+2. Create `.env` files for each service (see `services/*/.env.example`).
+3. Start the services:
+   ```bash
+   docker compose up --build
+   ```
+4. Access services:
+   - **Auth Service:** http://localhost:5000
+   - **Passport Service:** http://localhost:5001
+   - **Document Service:** http://localhost:5002
+   - **Notification Service:** http://localhost:5003
 
 ---
 
-## 4) Kafka Topics & Payload Structure
+## 📬 Kafka Topics & Payload Structure
 
-**Topics**
-
-* `passport.created`
-* `passport.updated`
-* `passport.deleted`
-
-**Common payload shape**
-
+### `passport.created`
 ```json
 {
-  "event": "passport.created",
-  "passportId": "6899cfb34ca96f13fd69565c",
+  "passportId": "1234567890",
   "userEmail": "owner@example.com",
-  "changes": { "generalInformation.warrantyPeriod": ["8","10"] },
-  "actor": { "id": "userId", "role": "admin" },
   "timestamp": "2025-08-11T10:00:00Z"
 }
 ```
 
-**Notes**
-
-* The **Notification Service** consumes these topics.
-* If SMTP is configured, an **email** is sent; otherwise, the event is **logged**.
-
----
-
-## Health/Readiness (for all services)
-
-* `GET /health` → `{ "status": "ok" }`
-* `GET /ready` → `{ "ready": true|false }` (if implemented)
-
----
-
-## Author
-
-**Kartik Gambhir** — Senior Backend Engineer (Node.js, AWS, Microservices)
-
+### `passport.updated`
+```json
+{
+  "passportId": "1234567890",
+  "userEmail": "owner@example.com",
+  "timestamp": "2025-08-11T10:10:00Z"
+}
 ```
+
+### `passport.deleted`
+```json
+{
+  "passportId": "1234567890",
+  "userEmail": "owner@example.com",
+  "timestamp": "2025-08-11T10:20:00Z"
+}
+```
+
+---
+
+## 🌐 API Usage (Deployed Endpoints)
+
+Below are the cURL commands for each deployed API from the Postman collection:
+
+### User Register
+```bash
+curl -X POST "https://battery-passport-platform-f4e4.onrender.com/api/auth/register" -H "Content-Type: application/json" -d '{
+    "email": "gambhirkartik5@gmail.com",
+    "password": "Kartik@2000",
+    "role": "admin"
+}'
+```
+### User Login
+```bash
+curl -X POST "https://battery-passport-platform-f4e4.onrender.com/api/auth/login" -H "Content-Type: application/json" -d '{
+    "email": "gambhirkartik5@gmail.com",
+    "password": "Kartik@2000"
+}'
+```
+### User dbSync
+```bash
+curl -X POST "https://battery-passport-platform-f4e4.onrender.com/internal/dbsync" -H "Content-Type: application/json" -H "x-internal-key: 4if3jwkd39er9i94" -H ": " -d '{
+    "modelName": "User",
+    "methodName": "find",
+    "args": [
+        {}
+    ]
+}'
+```
+### Create Passport
+```bash
+curl -X POST "https://battery-passport-platform-1.onrender.com/api/passports" -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OTljMjk3OGViMzZmZGEyMDg1NmI4NiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1NDkxMDYyNSwiZXhwIjoxNzU1NTE1NDI1fQ.xKITWueKhltzK6V4lO16J7nnGQkU5RKJwVoOylXCY64" -d '{
+    "data": {
+        "generalInformation": {
+            "batteryIdentifier": "BP-2024-011",
+            "batteryModel": {
+                "id": "LM3-BAT-2024",
+                "modelName": "GMC WZX1"
+            },
+            "batteryMass": 450,
+            "batteryCategory": "EV",
+            "batteryStatus": "Original",
+            "manufacturingDate": "2024-01-15",
+            "manufacturingPlace": "Gigafactory Nevada",
+            "warrantyPeriod": "8",
+            "manufacturerInformation": {
+                "manufacturerName": "Tesla Inc",
+                "manufacturerIdentifier": "TESLA-001"
+            }
+        },
+        "materialComposition": {
+            "batteryChemistry": "LiFePO4",
+            "criticalRawMaterials": [
+                "Lithium",
+                "Iron"
+            ],
+            "hazardousSubstances": [
+                {
+                    "substanceName": "Lithium Hexafluorophosphate",
+                    "chemicalFormula": "LiPF6",
+                    "casNumber": "21324-40-3"
+                }
+            ]
+        },
+        "carbonFootprint": {
+            "totalCarbonFootprint": 850,
+            "measurementUnit": "kg CO2e",
+            "methodology": "Life Cycle Assessment (LCA)"
+        }
+    }
+}'
+```
+### Passport dbSync
+```bash
+curl -X POST "https://battery-passport-platform-1.onrender.com/internal/dbsync" -H "Content-Type: application/json" -H "x-internal-key: 4if3jwkd39er9i94" -d '{
+    "modelName": "Passport",
+    "methodName": "find",
+    "args": [
+        {}
+    ]
+}'
+```
+### Get Passport By ID
+```bash
+curl -X GET "https://battery-passport-platform-1.onrender.com/api/passports/6899cfb34ca96f13fd69565c" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OTljMjk3OGViMzZmZGEyMDg1NmI4NiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1NDkxMDYyNSwiZXhwIjoxNzU1NTE1NDI1fQ.xKITWueKhltzK6V4lO16J7nnGQkU5RKJwVoOylXCY64"
+```
+### Update Passport
+```bash
+curl -X PUT "https://battery-passport-platform-1.onrender.com/api/passports/6899cfb34ca96f13fd69565c" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OTljMjk3OGViMzZmZGEyMDg1NmI4NiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1NDkxMDYyNSwiZXhwIjoxNzU1NTE1NDI1fQ.xKITWueKhltzK6V4lO16J7nnGQkU5RKJwVoOylXCY64" -H "Content-Type: application/json" -d '{
+    "data": {
+        "generalInformation": {
+            "warrantyPeriod": "10"
+        }
+    }
+}'
+```
+### Delete Passport By ID
+```bash
+curl -X DELETE "https://battery-passport-platform-1.onrender.com/api/passports/68982497d085a75c42621fd1" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OTYzNzEwMDE1NGY4YTc3MDk2ODBjYyIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1NDcwODk4OCwiZXhwIjoxNzU1MzEzNzg4fQ.HwCtzLFKlZLbq5bWry9VEBBY3NWiSgO8VeWQnZ4NqNc"
+```
+### Upload Document
+```bash
+curl -X POST "https://document-service-dozf.onrender.com/api/documents/upload" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OTljMjk3OGViMzZmZGEyMDg1NmI4NiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1NDkyNjE4NywiZXhwIjoxNzU1NTMwOTg3fQ.2nV_96DuNY12Soeq06tAPTvEQsorIOSM3lzppSIncxU"
+```
+### Get Presigned URL
+```bash
+curl -X GET "https://document-service-dozf.onrender.com/api/documents/689a11a886866bcc7142a65d" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OTljMjk3OGViMzZmZGEyMDg1NmI4NiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1NDkyNjE4NywiZXhwIjoxNzU1NTMwOTg3fQ.2nV_96DuNY12Soeq06tAPTvEQsorIOSM3lzppSIncxU"
+```
+### Update Metadata
+```bash
+curl -X PUT "https://document-service-dozf.onrender.com/api/documents/689a11a886866bcc7142a65d" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OTljMjk3OGViMzZmZGEyMDg1NmI4NiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1NDkyNjE4NywiZXhwIjoxNzU1NTMwOTg3fQ.2nV_96DuNY12Soeq06tAPTvEQsorIOSM3lzppSIncxU" -H "Content-Type: application/json" -d '{
+    "fileName": "test.txt"
+}'
+```
+### Delete Document
+```bash
+curl -X DELETE "https://document-service-dozf.onrender.com/api/documents/689a11a886866bcc7142a65d" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OTgwZDllZTdjMmFmNGRjN2NjNmZiYSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1NDc5NTQ1MSwiZXhwIjoxNzU1NDAwMjUxfQ.y2baHnpxZJgSIGqzgcScgFc4yjN5mVDsNoGLHA2im1w"
+```
+### http://localhost:5001/health
+```bash
+curl -X GET "https://document-service-dozf.onrender.com/health"
+```
+### Fetch all Passports
+```bash
+curl -X GET "https://battery-passport-platform-1.onrender.com/api/passports" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OTljMjk3OGViMzZmZGEyMDg1NmI4NiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1NDkxMTAzNiwiZXhwIjoxNzU1NTE1ODM2fQ.SHkUQ3Ld8zAlVLdjDEUqrSpZXebxqeKolzi453OPVuk"
+```
+
+---
+
+## 🏁 Deployment
+Services are containerized and can be deployed to:
+- Render
+- AWS ECS/Fargate
+- Any container orchestration platform
+
