@@ -11,6 +11,7 @@ import internalRoute from "./routes/internalRoute.js";
 import { config } from "./config.js";
 import { logger, component } from "./logger.js";
 import { requestId, httpLogger } from "./middlewares/requestLogging.js";
+import { mountSwagger } from "./swagger.js";
 
 const app = express();
 const boot = component("boot");
@@ -33,6 +34,9 @@ app.use(
     credentials: false,
   })
 );
+
+// Swagger (before limiters)
+mountSwagger(app, "Auth Service");
 
 // global rate limiter (100 req/min/IP)
 const globalLimiter = rateLimit({

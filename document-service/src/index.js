@@ -10,6 +10,7 @@ import { config } from "./config.js";
 import routes from "./routes/documentRoute.js";
 import { logger } from "./logger.js";
 import { requestId, httpLogger } from "./middlewares/requestLogging.js";
+import { mountSwagger } from "./swagger.js";
 
 const app = express();
 
@@ -30,6 +31,9 @@ app.use(
     credentials: false,
   })
 );
+
+// Swagger (mounted before rate-limiter so /docs is smooth)
+mountSwagger(app, "Document Service");
 
 // global rate limiter
 const globalLimiter = rateLimit({
