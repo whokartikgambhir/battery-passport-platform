@@ -1,33 +1,33 @@
 // external dependencies
-import express from 'express';
+import express from "express";
 
 // internal dependencies
-import { authenticate } from '../middlewares/authMiddleware.js';
-import { authorizeRole } from '../middlewares/roleMiddleware.js';
+import { authenticate } from "../middlewares/authMiddleware.js";
+import { authorizeRole } from "../middlewares/roleMiddleware.js";
 import {
   uploadMiddleware,
   uploadDocument,
   getDocumentLink,
   updateDocumentMeta,
   deleteDocument,
-  downloadDocument,
-} from '../controllers/documentController.js';
+  downloadDocument
+} from "../controllers/documentController.js";
 
 const router = express.Router();
 
 // Upload (any authenticated user)
-router.post('/upload', authenticate, uploadMiddleware, uploadDocument);
+router.post("/upload", authenticate, uploadMiddleware, uploadDocument);
 
 // Get presigned link
-router.get('/:docId', authenticate, getDocumentLink);
+router.get("/:docId", authenticate, getDocumentLink);
 
-// NEW: stream download via service (no presigned URL/host issues)
-router.get('/:docId/download', authenticate, downloadDocument);
+// Stream download via service
+router.get("/:docId/download", authenticate, downloadDocument);
 
 // Update metadata (admin)
-router.put('/:docId', authenticate, authorizeRole(['admin']), updateDocumentMeta);
+router.put("/:docId", authenticate, authorizeRole(["admin"]), updateDocumentMeta);
 
 // Delete (admin)
-router.delete('/:docId', authenticate, authorizeRole(['admin']), deleteDocument);
+router.delete("/:docId", authenticate, authorizeRole(["admin"]), deleteDocument);
 
 export default router;

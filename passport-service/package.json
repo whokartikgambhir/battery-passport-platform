@@ -15,7 +15,9 @@
     "jsonwebtoken": "^9.0.2",
     "kafkajs": "^2.2.4",
     "lodash.merge": "^4.6.2",
-    "mongoose": "^8.17.1"
+    "mongoose": "^8.17.1",
+    "morgan": "^1.10.1",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

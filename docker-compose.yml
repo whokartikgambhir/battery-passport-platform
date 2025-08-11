@@ -7,6 +7,7 @@ services:
     ports: ["27017:27017"]
     volumes:
       - mongo_data:/data/db
+    restart: unless-stopped
 
   zookeeper:
     image: bitnami/zookeeper:3.9
@@ -14,6 +15,7 @@ services:
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
     ports: ["2181:2181"]
+    restart: unless-stopped
 
   kafka:
     image: bitnami/kafka:3.7
@@ -26,11 +28,13 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
     ports: ["9092:9092"]
+    restart: unless-stopped
 
   redis:
     image: redis:7
     container_name: redis
     ports: ["6379:6379"]
+    restart: unless-stopped
 
   minio:
     image: minio/minio:RELEASE.2024-06-13T22-53-53Z
@@ -42,6 +46,7 @@ services:
     ports: ["9000:9000", "9001:9001"]
     volumes:
       - minio_data:/data
+    restart: unless-stopped
 
   auth-service:
     build:
@@ -52,9 +57,11 @@ services:
     environment:
       - PORT=5000
       - MONGO_URI=mongodb://mongo:27017/authdb
-      # JWT_SECRET comes from env file
+      - SERVICE_NAME=auth
+      - LOG_LEVEL=info
     depends_on: [mongo]
     ports: ["5000:5000"]
+    restart: unless-stopped
 
   passport-service:
     build:
@@ -68,8 +75,11 @@ services:
       - KAFKA_BROKER=kafka:9092
       - AUTH_BASE_URL=http://auth-service:5000/api/auth
       - AUTH_TIMEOUT_MS=1500
+      - SERVICE_NAME=passport
+      - LOG_LEVEL=info
     depends_on: [mongo, kafka, auth-service]
     ports: ["5001:5001"]
+    restart: unless-stopped
 
   document-service:
     build:
@@ -87,9 +97,11 @@ services:
       - PUBLIC_S3_HOST=http://localhost:9000
       - AUTH_BASE_URL=http://auth-service:5000/api/auth
       - AUTH_TIMEOUT_MS=1500
-      # S3_ACCESS_KEY / S3_SECRET_KEY come from env file
+      - SERVICE_NAME=document
+      - LOG_LEVEL=info
     depends_on: [mongo, minio, auth-service]
     ports: ["5002:5002"]
+    restart: unless-stopped
 
   notification-service:
     build:
@@ -104,10 +116,12 @@ services:
       - TOPICS=passport.created,passport.updated,passport.deleted
       - REDIS_URL=redis://redis:6379
       - MONGO_URI=mongodb://mongo:27017/notificationdb
-      - AUTH_MONGO_URI=mongodb://mongo:27017/authdb   # <-- fetch recipients from Auth DB
-      # MAIL_PASS should be in ./notification-service/.env (Gmail App Password)
+      - AUTH_MONGO_URI=mongodb://mongo:27017/authdb
+      - SERVICE_NAME=notification
+      - LOG_LEVEL=info
     depends_on: [kafka, redis, mongo]
     ports: ["5003:5003"]
+    restart: unless-stopped
 
   email-worker:
     build:
@@ -119,9 +133,11 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379
       - MONGO_URI=mongodb://mongo:27017/notificationdb
-      - AUTH_MONGO_URI=mongodb://mongo:27017/authdb   # <-- worker reads users from Auth DB
-      # MAIL_PASS should be in ./notification-service/.env (Gmail App Password)
+      - AUTH_MONGO_URI=mongodb://mongo:27017/authdb
+      - SERVICE_NAME=notification-worker
+      - LOG_LEVEL=info
     depends_on: [redis, mongo]
+    restart: unless-stopped
 
 volumes:
   mongo_data:
