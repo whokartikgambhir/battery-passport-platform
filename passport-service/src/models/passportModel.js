@@ -1,6 +1,12 @@
 // external dependencies
 import mongoose from 'mongoose';
 
+/**
+ * Passport schema definition
+ * Stores general information, material composition, and carbon footprint of a battery
+ * 
+ * @returns Mongoose Passport model
+ */
 const passportSchema = new mongoose.Schema({
   data: {
     generalInformation: {

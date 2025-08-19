@@ -19,6 +19,12 @@ mongoose.connect(config.mongoUri)
 
 const INVALID = new Set(["you@example.com", "test@example.com", "example@example.com"]);
 
+/**
+ * Helper method to resolve recipients for an email job
+ * 
+ * @param jobData object containing userIds or emails
+ * @returns array of recipient email addresses
+ */
 async function getRecipients(jobData) {
   // If producer passed explicit IDs/emails, prefer them
   if (Array.isArray(jobData.userIds) && jobData.userIds.length) {
@@ -34,6 +40,13 @@ async function getRecipients(jobData) {
   return admins.map(a => a.email);
 }
 
+/**
+ * Worker to process email jobs from BullMQ queue
+ * Retries failed jobs with exponential backoff
+ * 
+ * @param job BullMQ job object containing type, passportId, recipients
+ * @returns void, sends emails and logs results to DB
+ */
 export const emailWorker = new Worker(
   "emailQueue",
   async job => {

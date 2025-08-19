@@ -3,6 +3,12 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+/**
+ * Notification service configuration object
+ * Loads values from environment variables with defaults
+ * 
+ * @returns config object containing port, kafkaBroker, groupId, topics, redisUrl, mongoUri, authMongoUri, mailFromUser, mailSmtpUser, mailSmtpPass
+ */
 export const config = {
   port: Number(process.env.PORT || 5003),
   kafkaBroker: process.env.KAFKA_BROKER || "kafka:9092",
