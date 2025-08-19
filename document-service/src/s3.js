@@ -4,6 +4,12 @@ import { S3Client } from '@aws-sdk/client-s3';
 // internal dependencies
 import { config } from './config.js';
 
+/**
+ * AWS S3 client instance
+ * Configured using values from config.s3
+ * 
+ * @returns initialized S3Client
+ */
 export const s3 = new S3Client({
   region: config.s3.region,
   forcePathStyle: config.s3.forcePathStyle,

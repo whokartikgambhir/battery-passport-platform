@@ -1,6 +1,12 @@
 // external dependencies
 import mongoose from 'mongoose';
 
+/**
+ * Document schema definition
+ * Fields: fileName, contentType, size, s3Key, bucket, uploadedBy
+ * 
+ * @returns Mongoose Document model
+ */
 const docSchema = new mongoose.Schema({
   fileName: { type: String, required: true },
   contentType: { type: String },
