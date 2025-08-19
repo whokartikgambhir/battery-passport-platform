@@ -3,6 +3,12 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+/**
+ * Application configuration object
+ * Loads values from environment variables with defaults
+ * 
+ * @returns config object containing port, mongoUri, kafkaBroker, authBaseUrl, authTimeoutMs, serviceName, logLevel
+ */
 export const config = {
   port: process.env.PORT || 5001,
   mongoUri: process.env.MONGO_URI,

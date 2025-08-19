@@ -8,6 +8,12 @@ import { component } from "../logger.js";
 let producer;
 const klog = component("kafka");
 
+/**
+ * Method to get or create a Kafka producer
+ * Connects lazily on first call
+ * 
+ * @returns Kafka producer instance
+ */
 export const getProducer = async () => {
   if (producer) return producer;
   const kafka = new Kafka({ clientId: "passport-service", brokers: [config.kafkaBroker] });
@@ -17,6 +23,13 @@ export const getProducer = async () => {
   return producer;
 };
 
+/**
+ * Method to emit an event to a Kafka topic
+ * 
+ * @param topic Kafka topic name
+ * @param payload event payload object
+ * @returns void
+ */
 export const emitEvent = async (topic, payload) => {
   try {
     const p = await getProducer();

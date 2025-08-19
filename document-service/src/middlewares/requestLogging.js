@@ -5,11 +5,28 @@ import { randomUUID } from "crypto";
 // internal dependencies
 import { logger } from "../logger.js";
 
+/**
+ * Middleware to attach a unique request id to each request
+ * 
+ * @param req request object, updated with id
+ * @param _res response object (not used)
+ * @param next callback to pass control to next middleware
+ * @returns void
+ */
 export function requestId(req, _res, next) {
   req.id = req.headers["x-request-id"] || randomUUID();
   next();
 }
 
+/**
+ * Middleware to log HTTP requests
+ * Logs method, url, status, length, response time, remote address and user agent
+ * 
+ * @param tokens morgan tokens object
+ * @param req request object with attached id
+ * @param res response object
+ * @returns null after logging request details
+ */
 export const httpLogger = morgan((tokens, req, res) => {
   const line = {
     reqId: req.id,

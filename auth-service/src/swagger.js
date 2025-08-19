@@ -2,6 +2,15 @@
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 
+
+/**
+ * Method to mount Swagger UI for API documentation
+ * 
+ * @param app express application instance
+ * @param title API title
+ * @param port server port number
+ * @returns void, mounts /docs route with Swagger UI
+ */
 export function mountSwagger(app, title, port) {
   const spec = swaggerJSDoc({
     definition: {

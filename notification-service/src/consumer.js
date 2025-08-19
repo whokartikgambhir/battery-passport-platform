@@ -16,6 +16,14 @@ const emailQueue = new Queue("emailQueue", {
   connection: { url: config.redisUrl }
 });
 
+/**
+ * Method to handle incoming Kafka events
+ * Parses payload and enqueues email jobs in BullMQ
+ * 
+ * @param topic kafka topic name
+ * @param raw raw message payload string
+ * @returns void
+ */
 const handleKafkaEvent = async (topic, raw) => {
   let parsed = {};
   try { parsed = JSON.parse(raw); } catch { klog.warn("payload parse failed", { raw }); }
@@ -36,6 +44,12 @@ const handleKafkaEvent = async (topic, raw) => {
   qlog.info("enqueued email", { type, passportId: parsed.id });
 };
 
+/**
+ * Method to start Kafka consumer
+ * Subscribes to topics, logs events, and enqueues jobs
+ * 
+ * @returns kafka consumer instance
+ */
 export const startConsumer = async () => {
   const kafka = new Kafka({ clientId: "notification-service", brokers: [config.kafkaBroker] });
   const consumer = kafka.consumer({ groupId: config.groupId });

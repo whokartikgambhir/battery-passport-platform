@@ -12,7 +12,12 @@ const transport = nodemailer.createTransport({
   }
 });
 
-// subject/body templates
+/**
+ * Method to build email subject and body based on event type
+ * 
+ * @param param0 object containing type (created, updated, deleted) and passportId
+ * @returns object with subject and text
+ */
 export function buildMessage({ type, passportId }) {
   const verb =
     type === "created" ? "Created" :
@@ -28,6 +33,12 @@ export function buildMessage({ type, passportId }) {
   return { subject, text };
 }
 
+/**
+ * Method to send email notification using nodemailer
+ * 
+ * @param param0 object containing recipient (to), type, and passportId
+ * @returns promise of nodemailer sendMail result
+ */
 export async function sendEmail({ to, type, passportId }) {
   const { subject, text } = buildMessage({ type, passportId });
 

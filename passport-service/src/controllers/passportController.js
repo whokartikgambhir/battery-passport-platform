@@ -8,7 +8,13 @@ import { component } from "../logger.js";
 
 const log = component("passport");
 
-// GET /api/passports  (admin/user)
+/**
+ * Method to list all passports
+ * 
+ * @param _req unused request object
+ * @param res response object
+ * @returns response object with array of passports
+ */
 export const listPassports = async (_req, res) => {
   try {
     const docs = await Passport.find({}).lean();
@@ -19,7 +25,14 @@ export const listPassports = async (_req, res) => {
   }
 };
 
-// POST /api/passports  (admin)
+/**
+ * Method to create a new passport
+ * Emits passport.created event after creation
+ * 
+ * @param req request object containing passport data in body
+ * @param res response object
+ * @returns response object with created passport
+ */
 export const createPassport = async (req, res) => {
   try {
     const passport = await Passport.create(req.body);
@@ -31,7 +44,13 @@ export const createPassport = async (req, res) => {
   }
 };
 
-// GET /api/passports/:id  (admin/user)
+/**
+ * Method to fetch passport by id
+ * 
+ * @param req request object containing id param
+ * @param res response object
+ * @returns response object with passport data or 404 if not found
+ */
 export const getPassportById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -44,7 +63,14 @@ export const getPassportById = async (req, res) => {
   }
 };
 
-// PUT /api/passports/:id  (admin)
+/**
+ * Method to update passport by id
+ * Performs deep merge and emits passport.updated event
+ * 
+ * @param req request object containing id param and update data in body
+ * @param res response object
+ * @returns response object with updated passport
+ */
 export const updatePassport = async (req, res) => {
   try {
     const { id } = req.params;
@@ -63,7 +89,14 @@ export const updatePassport = async (req, res) => {
   }
 };
 
-// DELETE /api/passports/:id  (admin)
+/**
+ * Method to delete passport by id
+ * Emits passport.deleted event after deletion
+ * 
+ * @param req request object containing id param
+ * @param res response object
+ * @returns response object with deletion confirmation
+ */
 export const deletePassport = async (req, res) => {
   try {
     const { id } = req.params;

@@ -5,6 +5,15 @@ import { component } from "../logger.js";
 const AUTH_INTROSPECT_URL = `${config.authBaseUrl}/introspect`;
 const log = component("auth");
 
+/**
+ * Middleware to authenticate requests using JWT
+ * Validates token by calling the auth service introspect endpoint
+ * 
+ * @param req request object containing authorization header with Bearer token
+ * @param res response object
+ * @param next callback to pass control to the next middleware
+ * @returns response object with 401 if unauthorized, otherwise attaches user to req and calls next
+ */
 export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || "";
@@ -41,6 +50,12 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
+/**
+ * Helper to safely parse JSON from response
+ * 
+ * @param resp fetch response object
+ * @returns parsed JSON object or null if invalid
+ */
 async function safeJson(resp) {
   try { return await resp.json(); } catch { return null; }
 }

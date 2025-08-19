@@ -8,6 +8,12 @@ const authConn = mongoose.createConnection(config.authMongoUri, {
   autoIndex: false
 });
 
+/**
+ * User schema for auth database
+ * Fields: email, password (hashed), role
+ * 
+ * @returns Mongoose AuthUser model
+ */
 const UserSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, unique: true },

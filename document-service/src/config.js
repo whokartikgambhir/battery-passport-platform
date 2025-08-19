@@ -3,6 +3,12 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+/**
+ * Application configuration object
+ * Loads values from environment variables with defaults
+ * 
+ * @returns config object containing port, mongoUri, jwtSecret, serviceName, logLevel, internalApiKey
+ */
 export const config = {
   port: process.env.PORT || 5002,
   mongoUri: process.env.MONGO_URI,

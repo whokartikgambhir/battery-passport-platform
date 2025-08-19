@@ -1,3 +1,4 @@
+// external dependencies
 import { createLogger, format, transports } from "winston";
 
 const { combine, timestamp, errors, splat, json, printf, colorize } = format;
@@ -12,6 +13,12 @@ const pretty = printf(({ level, message, timestamp, stack, ...meta }) => {
   return stack ? `${base}\n${stack}${rest}` : `${base}${rest}`;
 });
 
+/**
+ * Winston logger instance
+ * Configured with JSON format in production and colorized pretty format in development
+ * 
+ * @returns logger object
+ */
 export const logger = createLogger({
   level: logLevel,
   defaultMeta: { service: svc },
@@ -24,6 +31,13 @@ export const logger = createLogger({
   transports: [new transports.Console()]
 });
 
+/**
+ * Logger component wrapper
+ * Provides scoped logging methods with component name
+ * 
+ * @param name component name for log context
+ * @returns object with debug, info, warn, error methods
+ */
 export const component = (name) => ({
   debug: (msg, meta) => logger.debug(msg, { component: name, ...meta }),
   info:  (msg, meta) => logger.info(msg,  { component: name, ...meta }),

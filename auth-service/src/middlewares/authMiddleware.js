@@ -2,6 +2,15 @@ const AUTH_BASE_URL = process.env.AUTH_BASE_URL || 'http://auth-service:5000/api
 const AUTH_INTROSPECT_URL = `${AUTH_BASE_URL}/introspect`;
 const AUTH_TIMEOUT_MS = Number(process.env.AUTH_TIMEOUT_MS || 1500);
 
+/**
+ * Middleware to authenticate requests using JWT
+ * Validates token by calling the auth service introspect endpoint
+ * 
+ * @param req object containing authorization header with Bearer token
+ * @param res response object
+ * @param next callback to pass control to the next middleware
+ * @returns response object with 401 Unauthorized if invalid, otherwise attaches user to req and calls next
+ */
 export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || '';

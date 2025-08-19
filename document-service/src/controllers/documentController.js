@@ -23,11 +23,23 @@ const log = component("documents");
 // Multer: keep file in memory buffer for direct S3 upload
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 25 * 1024 * 1024 } // 25MB cap (tweak as needed)
+  limits: { fileSize: 25 * 1024 * 1024 } // 25MB cap
 });
+
+/**
+ * Middleware to handle file upload via multipart/form-data
+ * 
+ * @param req request with file under "file" key
+ * @returns attaches file buffer to req.file
+ */
 export const uploadMiddleware = upload.single("file");
 
-// POST /api/documents/upload
+/**
+ * Method to upload a document to S3 and save metadata in DB
+ * 
+ * @param req request containing file in req.file
+ * @returns response object with document id and metadata
+ */
 export const uploadDocument = async (req, res) => {
   try {
     if (!req.file) {
@@ -68,21 +80,24 @@ export const uploadDocument = async (req, res) => {
   }
 };
 
-// GET /api/documents/:docId  -> return a presigned GET URL
+/**
+ * Method to generate a presigned URL for downloading a document
+ * 
+ * @param req request containing document id in params
+ * @returns response object with presigned url and metadata
+ */
 export const getDocumentLink = async (req, res) => {
   try {
     const { docId } = req.params;
     const doc = await Document.findById(docId);
     if (!doc) return res.status(404).json({ message: "Document not found" });
 
-    // Ensure object exists
     try {
       await s3.send(new HeadObjectCommand({ Bucket: doc.bucket, Key: doc.s3Key }));
     } catch {
       return res.status(404).json({ message: "Object not found in bucket" });
     }
 
-    // If PUBLIC_S3_HOST is provided, sign against that endpoint to avoid Host header mismatch
     const publicEndpoint = config.s3.publicHost || null;
     const signerClient = publicEndpoint
       ? new S3Client({
@@ -117,7 +132,12 @@ export const getDocumentLink = async (req, res) => {
   }
 };
 
-// GET /api/documents/:docId/download  -> stream file to client
+/**
+ * Method to stream a document directly from S3
+ * 
+ * @param req request containing document id in params
+ * @returns file stream as response
+ */
 export const downloadDocument = async (req, res) => {
   try {
     const { docId } = req.params;
@@ -125,7 +145,7 @@ export const downloadDocument = async (req, res) => {
     if (!doc) return res.status(404).json({ message: "Document not found" });
 
     const cmd = new GetObjectCommand({ Bucket: doc.bucket, Key: doc.s3Key });
-    const data = await s3.send(cmd); // Body is a readable stream
+    const data = await s3.send(cmd);
 
     res.setHeader("Content-Type", doc.contentType || "application/octet-stream");
     res.setHeader("Content-Disposition", `attachment; filename="${doc.fileName}"`);
@@ -138,7 +158,12 @@ export const downloadDocument = async (req, res) => {
   }
 };
 
-// PUT /api/documents/:docId  -> update metadata (e.g., fileName)
+/**
+ * Method to update document metadata
+ * 
+ * @param req request containing document id in params and metadata in body
+ * @returns response object with updated document
+ */
 export const updateDocumentMeta = async (req, res) => {
   try {
     const { docId } = req.params;
@@ -158,7 +183,12 @@ export const updateDocumentMeta = async (req, res) => {
   }
 };
 
-// DELETE /api/documents/:docId
+/**
+ * Method to delete a document from S3 and DB
+ * 
+ * @param req request containing document id in params
+ * @returns response object with deletion confirmation
+ */
 export const deleteDocument = async (req, res) => {
   try {
     const { docId } = req.params;
