@@ -1,10 +1,10 @@
-# 🔋 Battery Passport Platform – MEAtec Backend Assignment
+# Battery Passport Platform – MEAtec Backend Assignment
 
 A microservices-based backend system for managing **digital battery passports** built with **Node.js, Express.js, MongoDB, Kafka, MinIO-compatible storage**, and **Docker**.
 
 ---
 
-## 📜 Overview
+## Overview
 
 This platform manages:
 - User authentication & role-based access
@@ -16,7 +16,7 @@ The architecture follows **service isolation** principles with **HTTP** and **Ka
 
 ---
 
-## 🏗 Microservices
+## Microservices
 
 ### 1. **Auth Service**
 - **Responsibilities:**
@@ -60,14 +60,14 @@ The architecture follows **service isolation** principles with **HTTP** and **Ka
 
 ---
 
-## 🔌 Communication
+## Communication
 - **HTTP** – Auth & role validation between services
 - **Kafka** – Asynchronous event communication
 - **MinIO** – File storage
 
 ---
 
-## ⚙️ Tech Stack
+## Tech Stack
 - **Backend:** Node.js, Express.js
 - **Database:** MongoDB
 - **Messaging:** Apache Kafka
@@ -78,7 +78,7 @@ The architecture follows **service isolation** principles with **HTTP** and **Ka
 
 ---
 
-## 🚀 Local Setup
+## Local Setup
 
 ### Prerequisites
 - Docker & Docker Compose
@@ -103,7 +103,7 @@ The architecture follows **service isolation** principles with **HTTP** and **Ka
 
 ---
 
-## 📬 Kafka Topics & Payload Structure
+## Kafka Topics & Payload Structure
 
 ### `passport.created`
 ```json
@@ -134,7 +134,7 @@ The architecture follows **service isolation** principles with **HTTP** and **Ka
 
 ---
 
-## 🌐 API Usage (Deployed Endpoints)
+## API Usage (Deployed Endpoints)
 
 Below are the cURL commands for each deployed API from the Postman collection:
 
@@ -263,7 +263,7 @@ curl -X GET "https://battery-passport-platform-1.onrender.com/api/passports" -H 
 
 ---
 
-## 🏁 Deployment
+## Deployment
 Services are containerized and can be deployed to:
 - Render
 - AWS ECS/Fargate
