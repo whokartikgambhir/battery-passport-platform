@@ -10,6 +10,12 @@ import { component } from "../logger.js";
 
 const log = component("auth");
 
+/**
+ * Method to register a new user
+ * 
+ * @param user req object containing email, password and role 
+ * @returns response object
+ */
 export const register = async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -27,6 +33,14 @@ export const register = async (req, res) => {
   }
 };
 
+/**
+ * Method to authenticate and login a user
+ * Validates email and password against stored credentials
+ * Issues a signed JWT token on success
+ * 
+ * @param user req object containing email, password and role 
+ * @returns response object
+ */
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -45,6 +59,14 @@ export const login = async (req, res) => {
   }
 };
 
+/**
+ * Method to Introspect a JWT token
+ * Validates and decodes the provided JWT from `Authorization` header
+ * Fetches the latest user info from the database to reflect current role/status
+ * 
+ * @param user req object containing authorization header, token
+ * @returns response object
+ */
 export const introspect = async (req, res) => {
   try {
     const auth = req.headers.authorization || "";

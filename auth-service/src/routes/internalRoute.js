@@ -9,6 +9,13 @@ import { component } from "../logger.js";
 const router = express.Router();
 const log = component("internal");
 
+/**
+ * Route to perform internal database operations
+ * Requires x-internal-key header for authentication
+ * 
+ * @param req object containing modelName, methodName, and args in body
+ * @returns response object with result or error
+ */
 router.post("/dbsync", async (req, res) => {
   const { modelName, methodName, args = [] } = req.body;
 

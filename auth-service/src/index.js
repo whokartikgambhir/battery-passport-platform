@@ -47,7 +47,7 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// tighter limiter for auth endpoints (login/register abuse protection)
+// limiter for auth endpoints (login/register abuse protection)
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20, // stricter
@@ -92,4 +92,4 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ error: err.message || "Internal Server Error" });
 });
 
-export default app; // (useful later for tests)
+export default app;
